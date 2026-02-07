@@ -253,6 +253,12 @@ DB_ROOT_PASSWORD=
 DB_PASSWORD=
 ```
 
+Create the logfile before starting or docker will create it as a directory
+
+```bash
+touch supportboi.log
+```
+
 Start the compose file
 ```
 sudo docker compose up -d --env-file .env
