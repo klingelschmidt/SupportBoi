@@ -175,6 +175,91 @@ While the Windows versions are fully supported they are not as well tested as th
 
 </details>
 
+> [!WARNING]
+> Only advanced users beyond this point.
+
+<details>
+<summary><b>Docker</b></summary>
+<br/>
+
+Until Karl uploads a container image on Dockerhub you need to build the container yourself.
+
+**1.** In the main directory you can build the container image with 
+```bash
+sudo docker build -t supportboi:latest .
+```
+
+**2.** Create a compose.yaml that will start a database and supportboi. For example:
+```yaml
+services:
+  supportboi:
+    image: supportboi:latest
+    restart: unless-stopped
+    command:
+      - --config
+      - /app/config.yml
+      - --transcripts
+      - /app/transcripts
+      - --log-file
+      - /app/supportboi.log
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+      - ./transcripts:/app/transcripts
+      - ./supportboi.log:/app/supportboi.log:rw
+    depends_on:
+      db:
+        condition: service_healthy
+
+  supportboi-db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?required}
+      MARIADB_DATABASE: supportboi
+      MARIADB_USER: supportboi
+      MARIADB_PASSWORD: ${DB_PASSWORD:?required}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+```
+
+**3.** Set up the config.yml file
+
+```bash
+curl -so config.yml https://raw.githubusercontent.com/KarlOfDuty/SupportBoi/refs/heads/main/default_config.yml
+```
+
+Change the database address to the database container name.
+
+```yaml
+database:
+    # Address and port of the mysql server.
+    address: "supportboi-db"
+    port: 3306
+```
+
+**4.** Run the compose file
+
+Create a .env file with database passwords. 
+```
+DB_ROOT_PASSWORD=
+DB_PASSWORD=
+```
+
+Start the compose file
+```
+sudo docker compose up -d --env-file .env
+```
+
+</details>
+
 # Database Setup
 This guide assumes a MySQL/MariaDB installation, but it will be the same with other compatible database servers.
 
