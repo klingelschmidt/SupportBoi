@@ -195,19 +195,12 @@ services:
   supportboi:
     image: supportboi:latest
     restart: unless-stopped
-    command:
-      - --config
-      - /app/config.yml
-      - --transcripts
-      - /app/transcripts
-      - --log-file
-      - /app/supportboi.log
     volumes:
       - ./config.yml:/app/config.yml:ro
       - ./transcripts:/app/transcripts
-      - ./supportboi.log:/app/supportboi.log:rw
+      - ./supportboi.log:/app/supportboi.log
     depends_on:
-      db:
+      supportboi-db:
         condition: service_healthy
 
   supportboi-db:
@@ -235,8 +228,9 @@ volumes:
 ```bash
 curl -so config.yml https://raw.githubusercontent.com/KarlOfDuty/SupportBoi/refs/heads/main/default_config.yml
 ```
+Open the bot config using your preferred text editor and set it up to your liking. It contains instructions for all options
 
-Change the database address to the database container name.
+If you are starting the database and supportbot with the same compose file you can change the database address to the database container name.
 
 ```yaml
 database:
@@ -245,15 +239,20 @@ database:
     port: 3306
 ```
 
+Set the log file and transcript dir to the paths in the compose file. 
+
+Example for using the compose file above:
+
+```yaml
+  transcript-dir: "/app/transcripts"
+  log-file: "/app/supportboi.log"
+```
+
 **4.** Run the compose file
 
-Create a .env file with database passwords. 
-```
-DB_ROOT_PASSWORD=
-DB_PASSWORD=
-```
+Make sure any env vars that are needed for the database are sourced before starting!
 
-Create the logfile before starting or docker will create it as a directory
+Create the logfile before starting or docker will create a directory
 
 ```bash
 touch supportboi.log
@@ -261,7 +260,7 @@ touch supportboi.log
 
 Start the compose file
 ```
-sudo docker compose up -d --env-file .env
+sudo docker compose up -d
 ```
 
 </details>
