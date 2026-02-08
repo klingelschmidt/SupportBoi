@@ -182,55 +182,27 @@ While the Windows versions are fully supported they are not as well tested as th
 <summary><b>Docker</b></summary>
 <br/>
 
-Until Karl uploads a container image on Dockerhub you need to build the container yourself.
+Until Karl uploads an official container image you need to build the container yourself.
 
-**1.** In the main directory you can build the container image with 
+**0.** In the main directory you can build the container image with 
+
 ```bash
 sudo docker build -t supportboi:latest .
 ```
 
-**2.** Create a compose.yaml that will start a database and supportboi. For example:
-```yaml
-services:
-  supportboi:
-    image: supportboi:latest
-    restart: unless-stopped
-    volumes:
-      - ./config.yml:/app/config.yml:ro
-      - ./transcripts:/app/transcripts
-      - ./supportboi.log:/app/supportboi.log
-    depends_on:
-      supportboi-db:
-        condition: service_healthy
+**1.** Create a compose file
 
-  supportboi-db:
-    image: mariadb:11
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?required}
-      MARIADB_DATABASE: supportboi
-      MARIADB_USER: supportboi
-      MARIADB_PASSWORD: ${DB_PASSWORD:?required}
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+You can use compose.yaml in the main repo as a reference.
 
-volumes:
-  db_data:
-```
-
-**3.** Set up the config.yml file
+**2.** Set up the config.yml file
 
 ```bash
 curl -so config.yml https://raw.githubusercontent.com/KarlOfDuty/SupportBoi/refs/heads/main/default_config.yml
 ```
+
 Open the bot config using your preferred text editor and set it up to your liking. It contains instructions for all options
 
-If you are starting the database and supportbot with the same compose file you can change the database address to the database container name.
+If you are defining the bot and database in the same file you can set the database address to the database container name.
 
 ```yaml
 database:
@@ -239,26 +211,19 @@ database:
     port: 3306
 ```
 
-Set the log file and transcript dir to the paths in the compose file. 
-
-Example for using the compose file above:
+Set the log file and transcript dir to bind mounts so you can reach them on the host system.
 
 ```yaml
   transcript-dir: "/app/transcripts"
-  log-file: "/app/supportboi.log"
+  log-file: "/app/log/supportboi.log"
 ```
 
-**4.** Run the compose file
+**3.** Run the compose file
 
-Make sure any env vars that are needed for the database are sourced before starting!
+If you are using the example compose.yaml you need to source the database passwords that will be used to create the database!
 
-Create the logfile before starting or docker will create a directory
+Start the bot and database:
 
-```bash
-touch supportboi.log
-```
-
-Start the compose file
 ```
 sudo docker compose up -d
 ```
